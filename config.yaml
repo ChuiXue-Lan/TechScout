@@ -1,0 +1,121 @@
+# RSS 订阅 - HN Popular Blogs 2025
+feeds:
+
+  - name: "Arxiv CS.AI"
+    url: "https://rss.arxiv.org/rss/cs.AI"
+    max_articles: 1
+    keywords:  # 只处理包含这些词的文章（OR 逻辑，不区分大小写）
+      - "agent"
+      - "RAG"
+      - "SFT"
+      - "reinforcement learning"
+      - "retrieval-augmented"
+    exclude_keywords:  # 命中任意一个即丢弃（OR 逻辑，不区分大小写）
+      # 医疗与生物医学 AI
+      - "clinical"
+      - "radiology"
+      - "biomedical"
+      - "healthcare"
+      - "psychiatric"
+      - "brain image"
+      - "fMRI"
+      - "CT report"
+      - "medical image"
+      - "drug discovery"
+      # 教育与人机交互
+      - "tutoring"
+      - "autism"
+      - "academic writing"
+      - "mixed reality"
+      - "anthropomorphism"
+      - "campus"
+      # 科学 AI（物理、化学、材料）
+      - "atomistic"
+      - "XANES"
+      - "molecular generation"
+      - "physics research"
+      - "materials discovery"
+      - "first-principles"
+      - "quantum circuit"
+      # 联邦学习
+      - "federated learning"
+      # 推理与定理证明
+      - "theorem proving"
+      - "formal proof"
+      - "Lean 4"
+      - "Isabelle"
+      # AI 安全与对齐（P2 特定，避免误伤 agent safety）
+      - "jailbreak"
+      - "subliminal"
+      - "belief revision"
+      - "propaganda"
+      - "epistemic sovereignty"
+  # - name: "新智元"
+  #   # url: "https://raw.githubusercontent.com/osnsyc/Wechat-Scholar/main/channels/gh_108f2a2a27f4.xml"
+  #   url: "https://plink.anyfeeder.com/weixin/AI_era"
+  #   max_articles: 1
+  # - name: "量子位"
+  #   url: "https://feed.hamibot.com/api/feeds/613381f91269c358aa0ead29"
+  #   max_articles: 1
+
+# LLM 配置
+llm:
+  provider: "minimax"  # claude / openai / ollama
+  model: "MiniMax-M2.7"  # 3.7 Sonnet - 性能强，性价比好
+  api_key: "${MINIMAX_API_KEY}"  # 从环境变量读取
+
+  # OpenAI 配置（当 provider 为 openai 时使用）
+  openai_api_key: "${OPENAI_API_KEY}"
+  openai_model: "gpt-4o-mini"
+
+  # 摘要 prompt (Smart Brevity 风格)
+  summary_prompt: |
+    你是一个文章摘要生成器。直接输出结果，禁止任何前言、解释或思考过程。
+
+    [文章标题]：{title}
+    [文章内容]：{content}
+
+    【绝对禁止】：
+    - 禁止输出”用户要求”、”按照格式”、”现在生成”等任何说明性文字
+    - 禁止重复文章内容或标题之外的任何引导语
+
+    【输出格式，严格照抄结构】：
+    🏷️ [中文标题]
+    📌 [一句话核心观点，不超过50字]
+    💡 为什么值得关注: [1-2句话说明]
+    🔬 技术方法: [用1-2句说明核心技术手段、模型或框架]
+    📊 实验结果: [列出1-2个关键量化指标或对比结论]
+    📋 关键要点:
+    • [要点1]
+    • [要点2]
+    • [要点3]
+    ⭐ 推荐: [值得精读 / 建议浏览 / 可跳过]
+
+# 推送配置
+notify:
+  # 飞书
+  feishu:
+    enabled: true
+    webhook_url: "${FEISHU_WEBHOOK}"
+
+  # Telegram
+  telegram:
+    enabled: false
+    bot_token: "${TELEGRAM_BOT_TOKEN}"
+    chat_id: "${TELEGRAM_CHAT_ID}"
+
+  # Email
+  email:
+    enabled: false
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    username: "${EMAIL_USER}"
+    password: "${EMAIL_PASS}"
+    to: "you@example.com"
+
+# 运行配置
+schedule:
+  interval_minutes: 5  # 每15分钟检查一次
+  max_articles_per_run: 10  # 每次最多处理10篇（全局总上限）
+  # max_articles_per_feed: 3  # 每个 feed 默认上限；可被 feed 级 max_articles 覆盖
+  max_age_hours: 24  # 只处理最近24小时内的文章

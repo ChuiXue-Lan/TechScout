@@ -1,0 +1,19 @@
+# RSS parsing
+feedparser>=6.0.10
+
+# LLM SDKs
+anthropic>=0.18.0
+openai>=1.12.0
+
+# HTTP requests
+requests>=2.31.0
+httpx>=0.26.0
+
+# Configuration
+pyyaml>=6.0.1
+
+# Scheduling
+schedule>=1.2.1
+
+# Database (built-in, but explicit for clarity)
+# sqlite3 is part of Python standard library
