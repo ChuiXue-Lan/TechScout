@@ -155,8 +155,8 @@ def run_once(config: dict, storage: Storage):
         if summary:
             print(f"摘要: {summary[:100]}...")
 
-            # 推送通知
-            if notifier.has_notifiers:
+            # full 模式：逐篇推送
+            if notifier.has_notifiers and notifier.mode == 'full':
                 notify_results = notifier.notify(article, summary)
                 for channel, ok in notify_results.items():
                     status = "✅" if ok else "❌"
@@ -170,7 +170,6 @@ def run_once(config: dict, storage: Storage):
             success_count += 1
         else:
             print("[跳过] 摘要生成失败")
-            # 即使摘要失败也标记为已处理，避免重复尝试
             storage.mark_processed(article, None)
 
     # 8. 写入飞书多维表格
@@ -181,6 +180,11 @@ def run_once(config: dict, storage: Storage):
             exporter = FeishuExporter(bitable_cfg)
             written = exporter.export(bitable_results)
             print(f"[飞书多维表格] 成功写入 {written} 条")
+
+            # digest 模式：写入完成后推一条汇总
+            if notifier.has_notifiers and notifier.mode == 'digest' and written > 0:
+                table_url = bitable_cfg.get("table_url")
+                notifier.notify_digest(written, table_url)
         except Exception as e:
             print(f"[飞书多维表格] 写入失败: {e}")
 

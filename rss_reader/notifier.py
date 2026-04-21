@@ -1,6 +1,5 @@
 """推送模块 - 飞书/Telegram/Email"""
 
-import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -18,17 +17,7 @@ class FeishuNotifier:
         self.webhook_url = webhook_url
 
     def send(self, article: Article, summary: str) -> bool:
-        """
-        发送消息到飞书
-
-        Args:
-            article: 文章对象
-            summary: 摘要文本
-
-        Returns:
-            是否发送成功
-        """
-        # 构建富文本消息（Smart Brevity 风格）
+        """逐篇推送完整摘要卡片"""
         content = {
             "msg_type": "interactive",
             "card": {
@@ -49,25 +38,18 @@ class FeishuNotifier:
                             }
                         ]
                     },
-                    {
-                        "tag": "hr"
-                    },
+                    {"tag": "hr"},
                     {
                         "tag": "markdown",
                         "content": summary
                     },
-                    {
-                        "tag": "hr"
-                    },
+                    {"tag": "hr"},
                     {
                         "tag": "action",
                         "actions": [
                             {
                                 "tag": "button",
-                                "text": {
-                                    "tag": "plain_text",
-                                    "content": "🔗 阅读原文"
-                                },
+                                "text": {"tag": "plain_text", "content": "🔗 阅读原文"},
                                 "type": "primary",
                                 "url": article.url
                             }
@@ -76,15 +58,44 @@ class FeishuNotifier:
                 ]
             }
         }
+        return self._post(content)
 
+    def send_digest(self, count: int, table_url: Optional[str] = None) -> bool:
+        """推送汇总通知：表格新增了 N 篇论文"""
+        body = f"本次新增 **{count}** 篇论文总结，已同步至多维表格。"
+        elements: list = [{"tag": "markdown", "content": body}]
+        if table_url:
+            elements.append({
+                "tag": "action",
+                "actions": [
+                    {
+                        "tag": "button",
+                        "text": {"tag": "plain_text", "content": "📋 查看表格"},
+                        "type": "primary",
+                        "url": table_url
+                    }
+                ]
+            })
+        content = {
+            "msg_type": "interactive",
+            "card": {
+                "header": {
+                    "title": {"tag": "plain_text", "content": "🤖 TechScout 更新"},
+                    "template": "green"
+                },
+                "elements": elements
+            }
+        }
+        return self._post(content)
+
+    def _post(self, payload: dict) -> bool:
         try:
             response = requests.post(
                 self.webhook_url,
-                json=content,
+                json=payload,
                 headers={"Content-Type": "application/json"},
                 timeout=10
             )
-
             if response.status_code == 200:
                 result = response.json()
                 if result.get('code') == 0 or result.get('StatusCode') == 0:
@@ -94,7 +105,6 @@ class FeishuNotifier:
             else:
                 print(f"[飞书] HTTP 错误: {response.status_code}")
                 return False
-
         except Exception as e:
             print(f"[飞书] 发送异常: {e}")
             return False
@@ -216,6 +226,8 @@ class Notifier:
 
     def __init__(self, config: dict):
         self.notifiers = []
+        # full: 每篇推完整摘要；digest: 汇总一条（默认 full）
+        self.mode: str = config.get('notify_mode', 'full')
 
         # 初始化飞书
         feishu_config = config.get('feishu', {})
@@ -248,21 +260,25 @@ class Notifier:
             )
 
     def notify(self, article: Article, summary: str) -> dict[str, bool]:
-        """
-        通过所有启用的渠道发送通知
-
-        Returns:
-            各渠道的发送结果
-        """
+        """逐篇推送（full 模式）"""
         results = {}
-
         for name, notifier in self.notifiers:
             print(f"[推送] {name}: {article.title[:30]}...")
             results[name] = notifier.send(article, summary)
+        return results
 
+    def notify_digest(self, count: int, table_url: Optional[str] = None) -> dict[str, bool]:
+        """汇总推送（digest 模式）"""
+        results = {}
+        for name, notifier in self.notifiers:
+            print(f"[推送] {name}: 汇总通知，共 {count} 篇")
+            if isinstance(notifier, FeishuNotifier):
+                results[name] = notifier.send_digest(count, table_url)
+            else:
+                # Telegram/Email 暂不支持 digest，跳过
+                results[name] = False
         return results
 
     @property
     def has_notifiers(self) -> bool:
-        """是否有可用的通知渠道"""
         return len(self.notifiers) > 0

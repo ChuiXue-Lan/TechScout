@@ -1,6 +1,5 @@
 # RSS 订阅 - HN Popular Blogs 2025
 feeds:
-
   - name: "Arxiv CS.AI"
     url: "https://rss.arxiv.org/rss/cs.AI"
     max_articles: 2
@@ -93,6 +92,7 @@ llm:
 
 # 推送配置
 notify:
+  notify_mode: "digest"  # full: 每篇推完整摘要；digest: 写入表格后推一条汇总
   # 飞书机器人（Webhook 推送）
   feishu:
     enabled: true
@@ -101,6 +101,7 @@ notify:
   # 飞书多维表格（Bitable 写入）
   feishu_bitable:
     enabled: true
+    table_url: "https://li.feishu.cn/wiki/TZDSwvuKKi4lTIkEhN8cpklwn0c?table=tblfIzGfkyMABlZ5&view=vew225em4x"
     app_id: "${FEISHU_APP_ID}"           # 飞书应用 App ID
     app_secret: "${FEISHU_APP_SECRET}"   # 飞书应用 App Secret
     app_token: "${FEISHU_APP_TOKEN}"     # 多维表格 App Token（见下方说明）
