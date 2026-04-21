@@ -3,7 +3,7 @@ feeds:
 
   - name: "Arxiv CS.AI"
     url: "https://rss.arxiv.org/rss/cs.AI"
-    max_articles: 1
+    max_articles: 2
     keywords:  # 只处理包含这些词的文章（OR 逻辑，不区分大小写）
       - "agent"
       - "RAG"
@@ -93,10 +93,25 @@ llm:
 
 # 推送配置
 notify:
-  # 飞书
+  # 飞书机器人（Webhook 推送）
   feishu:
     enabled: true
     webhook_url: "${FEISHU_WEBHOOK}"
+
+  # 飞书多维表格（Bitable 写入）
+  feishu_bitable:
+    enabled: true
+    app_id: "${FEISHU_APP_ID}"           # 飞书应用 App ID
+    app_secret: "${FEISHU_APP_SECRET}"   # 飞书应用 App Secret
+    app_token: "${FEISHU_APP_TOKEN}"     # 多维表格 App Token（见下方说明）
+    table_id: "${FEISHU_TABLE_ID}"       # 数据表 Table ID（见下方说明）
+    # 可选：覆盖默认列名映射（Python key -> 飞书列名）
+    # field_map:
+    #   title: "标题"
+    #   url: "链接"
+    #   summary: "摘要"
+    #   feed_name: "来源"
+    #   published: "发布时间"
 
   # Telegram
   telegram:
@@ -118,4 +133,4 @@ schedule:
   interval_minutes: 5  # 每15分钟检查一次
   max_articles_per_run: 10  # 每次最多处理10篇（全局总上限）
   # max_articles_per_feed: 3  # 每个 feed 默认上限；可被 feed 级 max_articles 覆盖
-  max_age_hours: 24  # 只处理最近24小时内的文章
+  max_age_hours: 48  # 只处理最近24小时内的文章

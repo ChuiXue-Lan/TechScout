@@ -14,6 +14,7 @@ from rss_reader.fetcher import fetch_all_feeds, filter_by_age
 from rss_reader.storage import Storage
 from rss_reader.summarizer import Summarizer
 from rss_reader.notifier import Notifier
+from rss_reader.feishu_exporter import FeishuExporter
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
@@ -143,6 +144,7 @@ def run_once(config: dict, storage: Storage):
 
     # 7. 处理每篇文章
     success_count = 0
+    bitable_results: list[tuple] = []
     for i, article in enumerate(articles_to_process, 1):
         print(f"\n--- 文章 {i}/{len(articles_to_process)} ---")
         print(f"标题: {article.title[:60]}...")
@@ -155,10 +157,13 @@ def run_once(config: dict, storage: Storage):
 
             # 推送通知
             if notifier.has_notifiers:
-                results = notifier.notify(article, summary)
-                for channel, ok in results.items():
+                notify_results = notifier.notify(article, summary)
+                for channel, ok in notify_results.items():
                     status = "✅" if ok else "❌"
                     print(f"  {status} {channel}")
+
+            # 收集多维表格写入结果
+            bitable_results.append((article, summary))
 
             # 标记为已处理
             storage.mark_processed(article, summary)
@@ -168,7 +173,18 @@ def run_once(config: dict, storage: Storage):
             # 即使摘要失败也标记为已处理，避免重复尝试
             storage.mark_processed(article, None)
 
-    # 8. 打印统计
+    # 8. 写入飞书多维表格
+    bitable_cfg = config.get("notify", {}).get("feishu_bitable", {})
+    if bitable_cfg.get("enabled") and bitable_results:
+        print("\n📋 [步骤4] 写入飞书多维表格...")
+        try:
+            exporter = FeishuExporter(bitable_cfg)
+            written = exporter.export(bitable_results)
+            print(f"[飞书多维表格] 成功写入 {written} 条")
+        except Exception as e:
+            print(f"[飞书多维表格] 写入失败: {e}")
+
+    # 9. 打印统计
     print("\n" + "=" * 50)
     print(f"✅ 完成! 成功处理 {success_count}/{len(articles_to_process)} 篇文章")
     stats = storage.get_stats()
