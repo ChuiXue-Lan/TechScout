@@ -49,6 +49,16 @@ class Summarizer:
             )
         return self._client
 
+    def _get_lixiang_client(self):
+        """获取理想 LLM Gateway 客户端 (OpenAI SDK 兼容模式)"""
+        if self._client is None:
+            import openai
+            self._client = openai.OpenAI(
+                api_key=self.api_key,
+                base_url="https://llm-gateway-proxy.inner.chj.cloud/llm-gateway/v1"
+            )
+        return self._client
+
     def _summarize_with_claude(self, prompt: str) -> str:
         """使用 Claude 生成摘要"""
         client = self._get_claude_client()
@@ -91,6 +101,20 @@ class Summarizer:
 
         return response.choices[0].message.content
 
+    def _summarize_with_lixiang(self, prompt: str) -> str:
+        """使用理想 LLM Gateway 生成摘要"""
+        client = self._get_lixiang_client()
+
+        response = client.chat.completions.create(
+            model=self.model,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        return response.choices[0].message.content
+
     def summarize(self, article: Article) -> Optional[str]:
         """
         为文章生成摘要
@@ -118,6 +142,8 @@ class Summarizer:
                 result = self._summarize_with_claude(prompt)
             elif self.provider == 'openai':
                 result = self._summarize_with_openai(prompt)
+            elif self.provider == 'lixiang':
+                result = self._summarize_with_lixiang(prompt)
             elif self.provider == 'minimax':
                 result = self._summarize_with_minimax(prompt)
             else:

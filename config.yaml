@@ -2,7 +2,7 @@
 feeds:
   - name: "Arxiv CS.AI"
     url: "https://rss.arxiv.org/rss/cs.AI"
-    max_articles: 2
+    # max_articles: 2  # 每个来源最多取 n 篇 → 如果不设置：取全部
     keywords:  # 只处理包含这些词的文章（OR 逻辑，不区分大小写）
       - "agent"
       - "RAG"
@@ -59,9 +59,9 @@ feeds:
 
 # LLM 配置
 llm:
-  provider: "minimax"  # claude / openai / ollama
-  model: "MiniMax-M2.7"  # 3.7 Sonnet - 性能强，性价比好
-  api_key: "${MINIMAX_API_KEY}"  # 从环境变量读取
+  provider: "lixiang"  # claude / openai / ollama / minimax / lixiang
+  model: "aws-claude-sonnet-4-5"
+  api_key: "${LIXIANG_API_KEY}"  # 从环境变量读取
 
   # OpenAI 配置（当 provider 为 openai 时使用）
   openai_api_key: "${OPENAI_API_KEY}"
@@ -131,7 +131,7 @@ notify:
 
 # 运行配置
 schedule:
-  interval_minutes: 5  # 每15分钟检查一次
-  max_articles_per_run: 10  # 每次最多处理10篇（全局总上限）
+  interval_minutes: 60  # 每60分钟检查一次
+  max_articles_per_run: 200  # 每次最多处理20篇（全局总上限）
   # max_articles_per_feed: 3  # 每个 feed 默认上限；可被 feed 级 max_articles 覆盖
-  max_age_hours: 48  # 只处理最近24小时内的文章
+  max_age_hours: 24  # 只处理最近24小时内的文章

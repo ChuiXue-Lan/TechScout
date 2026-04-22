@@ -61,7 +61,9 @@ def parse_published_date(entry) -> Optional[datetime]:
     """解析发布日期"""
     if hasattr(entry, 'published_parsed') and entry.published_parsed:
         try:
-            return datetime(*entry.published_parsed[:6])
+            from datetime import timezone
+            # feedparser 的 published_parsed 是 UTC 时间
+            return datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
         except (TypeError, ValueError):
             pass
     if hasattr(entry, 'updated_parsed') and entry.updated_parsed:
@@ -193,9 +195,9 @@ def filter_by_age(articles: list[Article], max_age_hours: int) -> list[Article]:
     Returns:
         过滤后的文章列表
     """
-    from datetime import timedelta
+    from datetime import timedelta, timezone
 
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=max_age_hours)
 
     filtered = []
@@ -203,7 +205,12 @@ def filter_by_age(articles: list[Article], max_age_hours: int) -> list[Article]:
         # 如果没有发布时间，保守处理：包含它
         if article.published is None:
             filtered.append(article)
-        elif article.published >= cutoff:
-            filtered.append(article)
+        else:
+            pub = article.published
+            # 如果是 naive datetime，假定为 UTC
+            if pub.tzinfo is None:
+                pub = pub.replace(tzinfo=timezone.utc)
+            if pub >= cutoff:
+                filtered.append(article)
 
     return filtered
