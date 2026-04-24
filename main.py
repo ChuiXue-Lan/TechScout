@@ -152,7 +152,12 @@ def run_once(config: dict, storage: Storage):
 
         # 生成摘要
         summary = summarizer.summarize(article)
+        category = None
         if summary:
+            # 从 "📁 分类: xxx" 行提取分类
+            for line in summary.split('\n'):
+                if line.startswith('📁 分类:'):
+                    category = line.split(':', 1)[1].strip()
             print(f"摘要: {summary[:100]}...")
 
             # full 模式：逐篇推送
@@ -163,7 +168,7 @@ def run_once(config: dict, storage: Storage):
                     print(f"  {status} {channel}")
 
             # 收集多维表格写入结果
-            bitable_results.append((article, summary))
+            bitable_results.append((article, summary, category))
 
             # 标记为已处理
             storage.mark_processed(article, summary)

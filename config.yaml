@@ -88,6 +88,7 @@ llm:
     • [要点1]
     • [要点2]
     • [要点3]
+    📁 分类: [LLM Agent 框架与系统 / RAG 与检索 / LLM 推理效率 / 视觉多模态 / 代码生成 / NLP与对话]
     ⭐ 推荐: [值得精读 / 建议浏览 / 可跳过]
 
 # 推送配置
@@ -106,7 +107,7 @@ notify:
     app_secret: "${FEISHU_APP_SECRET}"   # 飞书应用 App Secret
     app_token: "${FEISHU_APP_TOKEN}"     # 多维表格 App Token（见下方说明）
     table_id: "${FEISHU_TABLE_ID}"       # 数据表 Table ID（见下方说明）
-    # 可选：覆盖默认列名映射（Python key -> 飞书列名）
+    # 可选：覆盖默认列名映射（Python key -> 飞书列名）建议在feishu_exporter中修改
     # field_map:
     #   title: "标题"
     #   url: "链接"

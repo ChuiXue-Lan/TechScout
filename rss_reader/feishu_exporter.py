@@ -40,6 +40,7 @@ class FeishuExporter:
         # 字段名映射：Python key -> 飞书多维表格列名
         default_field_map = {
             "title":     "标题",
+            "category":  "分类",
             "published": "发布时间",
             "summary":   "论文总结",
             "content":   "摘要原文",
@@ -78,7 +79,7 @@ class FeishuExporter:
     def _resolve_app_token(self) -> str:
         """
         解析真实的 bitable app_token。
-        若配置的是 wiki node token（以字母开头且不含 'Bas'），
+        若配置的是 wiki node token（URL 里 /wiki/ 后面的部分），
         则调用 wiki API 获取对应的 obj_token。
         """
         if self.app_token:
@@ -113,8 +114,8 @@ class FeishuExporter:
     # 记录构建
     # ------------------------------------------------------------------
 
-    def _build_record(self, article: Article, summary: Optional[str]) -> dict:
-        """将 (Article, summary) 转换为飞书多维表格 record fields"""
+    def _build_record(self, article: Article, summary: Optional[str], category: Optional[str]) -> dict:
+        """将 (Article, summary, category) 转换为飞书多维表格 record fields"""
         fm = self.field_map
         fields: dict = {}
 
@@ -137,6 +138,9 @@ class FeishuExporter:
         if fm.get("feed_name"):
             fields[fm["feed_name"]] = article.feed_name
 
+        if fm.get("category") and category:
+            fields[fm["category"]] = category
+
         return {"fields": fields}
 
     # ------------------------------------------------------------------
@@ -145,14 +149,14 @@ class FeishuExporter:
 
     def export(
         self,
-        results: list[tuple[Article, Optional[str]]],
+        results: list[tuple[Article, Optional[str], Optional[str]]],
         batch_size: int = 500,
     ) -> int:
         """
         批量写入多维表格。
 
         Args:
-            results:    [(Article, summary), ...] 列表
+            results:    [(Article, summary, category), ...] 列表
             batch_size: 每批最多写入条数（飞书上限 500）
 
         Returns:
@@ -161,7 +165,7 @@ class FeishuExporter:
         if not results:
             return 0
 
-        records = [self._build_record(article, summary) for article, summary in results]
+        records = [self._build_record(article, summary, category) for article, summary, category in results]
         url = self.BATCH_CREATE_URL.format(
             app_token=self._resolve_app_token(),
             table_id=self.table_id,
